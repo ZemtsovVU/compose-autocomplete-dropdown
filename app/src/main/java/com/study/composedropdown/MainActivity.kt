@@ -7,8 +7,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -58,7 +56,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
     var fieldValue by remember { mutableStateOf(TextFieldValue(text = "")) }
-    val filteredItems = items.filter { it.contains(fieldValue.text, ignoreCase = true) }
+    val filteredItems = bigItems.filter { it.contains(fieldValue.text, ignoreCase = true) }
 
     var allowExpanded by remember { mutableStateOf(false) }
     val expanded = allowExpanded and filteredItems.isNotEmpty()
@@ -75,62 +73,53 @@ fun MainScreen(modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     var fieldSize by remember { mutableStateOf(IntSize(0, 0)) }
 
-    Column(
-        modifier = modifier.pointerInput(Unit) {
-            detectTapGestures {
-                // потому что DropdownMenu.onDismissRequest вызывается и при вводе с клавиатуры
-                allowExpanded = false // hoist?
-            }
-        }
-    ) {
-        Box(
-            modifier = Modifier.wrapContentSize(Alignment.TopStart)
-        ) {
-            OutlinedTextField(
-                value = fieldValue,
-                onValueChange = {
-                    allowExpanded = true
-                    fieldValue = it
-                },
-                singleLine = true,
-                label = { Text("Test label") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                interactionSource = interactionSource,
-                modifier = Modifier.onSizeChanged { fieldSize = it },
-            )
-            /* Do not use ExposedDropdownMenu, because of https://issuetracker.google.com/issues/244620242?pli=1 */
-            /* There is a scrollbar bug inside DropdownMenu: https://issuetracker.google.com/issues/243812426 */
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = {},
-                modifier = Modifier.requiredSize(
-                    width = with(density) { fieldSize.width.toDp() },
-                    height = with(density) { fieldSize.height.toDp() * 3 },
-                ),
-                properties = PopupProperties(focusable = false),
-            ) {
-                filteredItems.forEach { item ->
-                    DropdownMenuItem(
-                        text = { Text(text = item) },
-                        onClick = {
-                            fieldValue = fieldValue.copy(
-                                text = item,
-                                selection = TextRange(index = item.length),
-                            )
-                            allowExpanded = false
-                        }
-                    )
+    Box(
+        modifier = modifier
+            .wrapContentSize(Alignment.TopStart)
+            .pointerInput(Unit) {
+                detectTapGestures {
+                    // потому что DropdownMenu.onDismissRequest вызывается и при вводе с клавиатуры
+                    allowExpanded = false // todo hoist
                 }
             }
-        }
-        Spacer(modifier = Modifier.padding(16.dp))
+    ) {
         OutlinedTextField(
             value = fieldValue,
-            onValueChange = {},
+            onValueChange = {
+                allowExpanded = true
+                fieldValue = it
+            },
             singleLine = true,
-            label = { Text("Test label 2") },
+            label = { Text("Test label") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            interactionSource = interactionSource,
+            modifier = Modifier.onSizeChanged { fieldSize = it },
         )
+        /* Do not use ExposedDropdownMenu, because of https://issuetracker.google.com/issues/244620242?pli=1 */
+        /* There is a scrollbar bug inside DropdownMenu: https://issuetracker.google.com/issues/243812426 */
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = {},
+            modifier = Modifier.requiredSize(
+                width = with(density) { fieldSize.width.toDp() },
+                height = with(density) { fieldSize.height.toDp() * 3 },
+            ),
+            properties = PopupProperties(focusable = false),
+        ) {
+            filteredItems.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(text = item) },
+                    onClick = {
+                        fieldValue = fieldValue.copy(
+                            text = item,
+                            selection = TextRange(index = item.length),
+                        )
+                        allowExpanded = false
+                    }
+                )
+            }
+        }
     }
 }
 
