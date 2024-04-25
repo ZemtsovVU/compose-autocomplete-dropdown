@@ -16,6 +16,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -56,7 +58,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
     var fieldValue by remember { mutableStateOf(TextFieldValue(text = "")) }
-    val filteredItems = bigItems.filter { it.contains(fieldValue.text, ignoreCase = true) }
+    val filteredItems = smallItems.filter { it.contains(fieldValue.text, ignoreCase = true) }
 
     var allowExpanded by remember { mutableStateOf(false) }
     val expanded = allowExpanded and filteredItems.isNotEmpty()
@@ -73,16 +75,20 @@ fun MainScreen(modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     var fieldSize by remember { mutableStateOf(IntSize(0, 0)) }
 
-    Box(
-        modifier = modifier
-            .wrapContentSize(Alignment.TopStart)
+    // helper for click outside detection
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
             .pointerInput(Unit) {
                 detectTapGestures {
-                    // потому что DropdownMenu.onDismissRequest вызывается и при вводе с клавиатуры
-                    allowExpanded = false // todo hoist
+                    // click outside
+                    allowExpanded = false
                 }
-            }
-    ) {
+            },
+        color = Color.Transparent
+    ) {}
+
+    Box(modifier = modifier.wrapContentSize(Alignment.TopStart)) {
         OutlinedTextField(
             value = fieldValue,
             onValueChange = {
@@ -100,10 +106,10 @@ fun MainScreen(modifier: Modifier = Modifier) {
         /* There is a scrollbar bug inside DropdownMenu: https://issuetracker.google.com/issues/243812426 */
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = {},
+            onDismissRequest = {}, // потому что DropdownMenu.onDismissRequest вызывается и при вводе с клавиатуры
             modifier = Modifier.requiredSize(
                 width = with(density) { fieldSize.width.toDp() },
-                height = with(density) { fieldSize.height.toDp() * 3 },
+                height = with(density) { fieldSize.height.toDp() * filteredItems.size.coerceAtMost(3) },
             ),
             properties = PopupProperties(focusable = false),
         ) {
