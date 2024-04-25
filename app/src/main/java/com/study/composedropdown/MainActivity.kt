@@ -75,7 +75,10 @@ fun MainScreen(modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     var fieldSize by remember { mutableStateOf(IntSize(0, 0)) }
 
+    var wasFocus by remember { mutableStateOf(false) }
+
     // helper for click outside detection
+    // if parent will be Column it approach will not work
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -100,7 +103,16 @@ fun MainScreen(modifier: Modifier = Modifier) {
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = ExposedDropdownMenuDefaults.textFieldColors(),
             interactionSource = interactionSource,
-            modifier = Modifier.onSizeChanged { fieldSize = it },
+            modifier = Modifier
+                .onSizeChanged { fieldSize = it }
+                .onFocusChanged {
+                    val hasFocus = it.hasFocus
+                    if (wasFocus && !hasFocus) {
+                        allowExpanded = false
+                        // onFocusLost()
+                    }
+                    wasFocus = hasFocus
+                },
         )
         /* Do not use ExposedDropdownMenu, because of https://issuetracker.google.com/issues/244620242?pli=1 */
         /* There is a scrollbar bug inside DropdownMenu: https://issuetracker.google.com/issues/243812426 */
@@ -109,6 +121,12 @@ fun MainScreen(modifier: Modifier = Modifier) {
             onDismissRequest = {}, // потому что DropdownMenu.onDismissRequest вызывается и при вводе с клавиатуры
             modifier = Modifier.requiredSize(
                 width = with(density) { fieldSize.width.toDp() },
+                /* 
+                or you can use
+                Modifier
+                    .requiredWidth(with(density) { fieldSize.width.toDp() })
+                    .wrapContentHeight()
+                 */
                 height = with(density) { fieldSize.height.toDp() * filteredItems.size.coerceAtMost(3) },
             ),
             properties = PopupProperties(focusable = false),
